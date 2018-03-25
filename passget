@@ -1,0 +1,40 @@
+#!/bin/sh
+
+# to test, use:
+# ( read -s -p 'Enter password: ' password && echo && export password && passget UserName Banques "SocieteGenerale.fr MP" )
+
+
+# password is in $password variable
+
+field="$1"
+group="$2"
+entry="$3"
+
+# echo Retrieving $field of $group/$entry >&2
+
+if [ ${#password} -eq 0 ] 
+then
+    param=-guikeyprompt
+else 
+    param=-keyprompt
+fi
+
+#rem tokens= because return a string ala: Password: Key File: User Account (Y/N): <value>
+(mono ~/Dropbox/Keepass/KPScript.exe \
+    -c:GetEntryString ~/Dropbox/NewDatabase.kdbx \
+    -Field:$field \
+    -ref-Title:"$entry" \
+    -refx-Group:$group \
+    $param \
+  | grep -v -x "" \
+  | grep -v "OK: Operation completed successfully." \
+  | grep -v "To ignore a key component, simply press \[Enter\] without entering any string." \
+  | grep -v "Enter the composite master key for the specified database:" \
+  | sed -e 's!Password: Key File: User Account (Y/N): !!' \
+) <<EOF
+$password
+
+
+
+EOF
+
