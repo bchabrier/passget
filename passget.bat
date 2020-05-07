@@ -41,6 +41,7 @@ for /F "tokens=*" %%a in ('%inputcmd% ^| KPScript ^
         if not "!subline!"=="%%a" (
             set err=0
         )
+        if "!subline!"=="%%a" if "%param%"=="-guikeyprompt" set value=%%a
     )
 
 if %err%==1 (
