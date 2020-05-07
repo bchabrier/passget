@@ -1,5 +1,6 @@
 @echo off
 setlocal EnableExtensions
+setlocal EnableDelayedExpansion
 
 rem password is in %password% variable
 
@@ -17,17 +18,33 @@ if "%password%"=="" (
     set param=-keyprompt
 )
 
-rem tokens= because return a string ala: Password: Key File: User Account (Y/N): <value>
-for /F "tokens=6,*" %%a in ('%inputcmd% ^| D:\Dropbox\Keepass\KPScript ^
+set err=1
+set n=0
+for /F "tokens=*" %%a in ('%inputcmd% ^| KPScript ^
     -c:GetEntryString "D:\Dropbox\NewDatabase.kdbx" ^
     -Field:%field% ^
     -ref-Title:%entry% ^
     -refx-Group:%group% ^
-    %param% ^
-    ^| find /V "OK: Operation completed successfully." ^
-    ^| find /V "To ignore a key component, simply press [Enter] without entering any string." ^
-    ^| find /V "Enter the composite master key for the specified database:" ') do set value=%%b
+    %param% 2^>^&1') do (
+        set line=%%a
+        set /a n=!n!+1
+        call set "line_!n!=!line!"
+        call set "subline=%%line:Password: Key File: User Account (Y/N): E: =%%"
+        if "!subline!"=="%%a" (
+            call set "subline=%%line:Password: Key File: User Account (Y/N): =%%"   
+            if not "!subline!"=="%%a" (
+                set value=!subline!
+                set err=0
+            )
+        )
+        call set "subline=%%line:OK: Operation completed successfully.=%%"
+        if not "!subline!"=="%%a" (
+            set err=0
+        )
+    )
 
-
-echo.%value%
-
+if %err%==1 (
+    for /L %%i in (1,1,%n%) do call echo %%line_%%i%%>&2
+) else (
+    echo.%value%
+)
