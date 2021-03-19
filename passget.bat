@@ -6,6 +6,24 @@ setlocal EnableDelayedExpansion
 
 if "!debug!"=="1" echo.%* >&2
 
+for %%A in ("" "--help") do if "%1"==%%A (
+    echo Usage: %0 [--help^|--set^|^<field^> ^<group^> ^<entry^>] >&2
+    echo  --help:                  gives this help >&2
+    echo  --set:                   asks for password and encrypts the 'password' variable >&2
+    echo  ^<field^> ^<group^> ^<entry^>: gets the entry from keepass >&2
+    exit /B
+)
+
+if not "%1"=="--set" goto end_set:
+    if defined password goto next
+        set "psCommand=powershell -Command "$pword = read-host 'Enter Password' -AsSecureString ; ^
+            $BSTR=[System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($pword); ^
+                [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($BSTR)""
+        for /f "usebackq delims=" %%p in (`%psCommand%`) do set password=%%p
+    :next
+    shift /1
+:end_set:
+
 rem password is in %password% variable
 
 if "%password%"=="" goto end_encode:
